@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>youdao.words.openapi</string>
+	<key>category</key>
+	<string>Tools</string>
+	<key>connections</key>
+	<dict>
+		<key>50ACFBA3-8F38-4842-B93A-3B021E6F7E2A</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>6CAA3993-E688-4194-8F78-6AB54644C043</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>F7457EAD-8195-4291-9B76-775F7409F84D</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>6CAA3993-E688-4194-8F78-6AB54644C043</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>FBADB986-0B46-46A3-955E-E7C602D2C3E6</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>7A2CBD65-5832-4501-AA59-ACCE72907A19</key>
+		<array/>
+		<key>F7457EAD-8195-4291-9B76-775F7409F84D</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>7A2CBD65-5832-4501-AA59-ACCE72907A19</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>9B045256-76B5-4714-A40A-9777C4FEFD62</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>FBADB986-0B46-46A3-955E-E7C602D2C3E6</key>
+		<array/>
+	</dict>
+	<key>createdby</key>
+	<string>zhipeng</string>
+	<key>description</key>
+	<string>有道翻译-有道智云</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>youdao-translate</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>autopaste</key>
+				<false/>
+				<key>clipboardtext</key>
+				<string>{query}</string>
+				<key>transient</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.clipboard</string>
+			<key>uid</key>
+			<string>FBADB986-0B46-46A3-955E-E7C602D2C3E6</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>inputstring</key>
+				<string>{query}</string>
+				<key>matchcasesensitive</key>
+				<false/>
+				<key>matchmode</key>
+				<integer>2</integer>
+				<key>matchstring</key>
+				<string>^(?!/tmp/)</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.filter</string>
+			<key>uid</key>
+			<string>6CAA3993-E688-4194-8F78-6AB54644C043</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>alfredfiltersresultsmatchmode</key>
+				<integer>0</integer>
+				<key>argumenttrimmode</key>
+				<integer>0</integer>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>0</integer>
+				<key>keyword</key>
+				<string>tr</string>
+				<key>queuedelaycustom</key>
+				<integer>1</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<false/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string>translating ...</string>
+				<key>script</key>
+				<string># -*- coding: utf-8 -*-
+
+import json
+import sys
+import time
+import hashlib
+import urllib
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+YOUDAO_HOST = "http://openapi.youdao.com/"
+
+TRAN_KEY = "translate_key"
+TRAN_SEC = "translate_security"
+
+TTS_KEY = "tts_key"
+TTS_SEC = "tts_security"
+
+
+class YouDao(object):
+
+    def __init__(self):
+        self.app_key = ""
+
+    def sign(self, q, is_tts=False):
+        if is_tts:
+            key = TRAN_KEY
+            security = TRAN_SEC
+        else:
+            key = TTS_KEY
+            security = TTS_SEC
+        self.app_key = key
+        salt = int(time.time())
+        resource = u"{}{}{}{}".format(key, q, salt, security)
+        sign = hashlib.md5(resource.encode()).hexdigest()
+        return salt, sign
+
+    def tts(self, q, lang='auto', _id=''):
+        _id = _id or str(time.time())
+        salt, sign = self.sign(q, 1)
+        if type(q) == unicode:
+            q = q.encode("utf8")
+        qt = 'ttsapi/?q={}&amp;langType={}&amp;appKey={}&amp;salt={}&amp;sign={}'.format(urllib.quote(q), lang, self.app_key, salt, sign)
+        response = urllib.urlopen(YOUDAO_HOST + qt)
+        if response.headers.get('content-type') != "audio/mp3":
+            print response.read()
+            return False
+        with file('/tmp/%s.mp3' % _id, 'wb')as f:
+            f.write(response.read())
+            return _id
+
+    def execute(self, query, f="zh-CHS", t="EN"):
+        words_list = []
+        if type(query) == unicode:
+            query = query.encode("utf8")
+        salt, sign = self.sign(query)
+        qt = 'api/?q={}&amp;from={}&amp;to={}&amp;appKey={}&amp;salt={}&amp;sign={}'.format(urllib.quote(query), f, t, self.app_key, salt, sign)
+        html = urllib.urlopen(YOUDAO_HOST + qt).read()
+        data = json.loads(html)
+        _translation_list = data.get("translation", [""])[:1]
+        #speech = data.get("basic", {}).get("us-speech", "")
+        speech = data.get("basic", {}).get("phonetic", "")
+        _other_list = data.get("basic", {}).get("explains", [])
+        #return translation[0] if len(translation) else ""
+        _web_list = data.get('web', [])
+        translation_list = []
+        sound_list = []
+        other_list = []
+        web_list = []
+        sound_list.append({"arg": "/tmp/%s.mp3" % self.tts(query, _id="0"), "subtitle": "speak source:" + query, "icon": {"path":"7A2CBD65-5832-4501-AA59-ACCE72907A19.png"}})
+        sound_list.append({"arg": "/tmp/%s.mp3" % self.tts(_translation_list[0], _id="1"), "subtitle": "speak result:" + _translation_list[0], "icon": {"path":"7A2CBD65-5832-4501-AA59-ACCE72907A19.png"}})
+        for i in _translation_list:
+            translation_list.append({"arg":i, "title":i, "subtitle": "翻译结果 " + speech})
+            words_list.append(i)
+        for i in _web_list:
+            for v in i.get('value', []):
+                if v.strip() in words_list: continue
+                words_list.append(v)
+                web_list.append({"arg": v, "title":v, "subtitle": "网络释义: " + i.get("key")})
+
+        for i in _other_list:
+            if i.strip() in words_list: continue
+            words_list.append(i)
+            other_list.append({"arg":i, "title":i, "subtitle":"其他释义"})
+        return translation_list + sound_list + other_list + web_list
+
+
+youdao = YouDao()
+words = " ".join(sys.argv[1:])
+
+#print json.dumps( {"items":[{"uid": 1, "arg": words},]})
+
+#exit()
+try:
+    result_list = youdao.execute(words, f='auto', t='auto')
+except Exception,e:
+    print json.dumps( {"items":[{"uid": 1, "arg": "", "title": "Error", "subtitle":"%s" % e},]})
+    sys.exit(0)
+for i, j in enumerate(result_list):
+    j['uid'] = i
+    j.setdefault('title', j['subtitle'])
+print(json.dumps({"items": result_list}))
+
+sys.stdout.flush()
+sys.exit(0)
+
+def test():
+    pass
+    #youdao = YouDao()
+    #print youdao.execute("你好, 世界")
+    #print youdao.execute("hello world", f='auto', t='auto')
+    #print youdao.execute("nihao", f='auto', t='auto')
+
+    #print json.dumps(youdao.execute("hello", f='auto', t='auto'))
+    #print json.dumps(youdao.execute("你好", f='auto', t='auto'))
+    #print 'afplay /tmp/%s.mp3' % youdao.tts("你好", _id='0')</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string>translate word</string>
+				<key>title</key>
+				<string>tr word</string>
+				<key>type</key>
+				<integer>3</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>50ACFBA3-8F38-4842-B93A-3B021E6F7E2A</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>alfredfiltersresultsmatchmode</key>
+				<integer>0</integer>
+				<key>argumenttrimmode</key>
+				<integer>0</integer>
+				<key>argumenttype</key>
+				<integer>1</integer>
+				<key>escaping</key>
+				<integer>68</integer>
+				<key>keyword</key>
+				<string>sp</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string></string>
+				<key>script</key>
+				<string>import sys
+import json
+import subprocess
+
+query = "".join(sys.argv[1:])
+
+if "/tmp/" in query:
+	subprocess.Popen('afplay %s' % query, shell=True)
+	sys.stdout.write("")
+else:
+	#print(json.dumps({"item_list": [{"title": query, "arg": query}]}))
+	sys.stdout.write("")
+	print json.dumps( {"items":[{"uid": 1, "arg": query},]})
+	sys.stdout.flush()
+	sys.exit(0)</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string></string>
+				<key>title</key>
+				<string>speak ...</string>
+				<key>type</key>
+				<integer>3</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>7A2CBD65-5832-4501-AA59-ACCE72907A19</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>inputstring</key>
+				<string>{query}</string>
+				<key>matchcasesensitive</key>
+				<false/>
+				<key>matchmode</key>
+				<integer>2</integer>
+				<key>matchstring</key>
+				<string>/tmp/</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.filter</string>
+			<key>uid</key>
+			<string>F7457EAD-8195-4291-9B76-775F7409F84D</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.hidealfred</string>
+			<key>uid</key>
+			<string>9B045256-76B5-4714-A40A-9777C4FEFD62</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string>YouDao Translate
+Detail: https://ai.youdao.com/docs/doc-trans-api.s#p01
+
+command:
+tr WORD
+
+
+Configure `TRAN_KEY`, `TRAN_SEC`, `TTS_KEY`, `TTS_SEC` value on main file(script filter). 
+`TRAN_KEY/TRAN_SEC` may be the same as `TTS_KEY/TTS_SEC`.
+
+github: https://github.com/ChainBoy/youdao-translate-for-alfred
+author: zhipeng.py@gmail.com</string>
+	<key>uidata</key>
+	<dict>
+		<key>50ACFBA3-8F38-4842-B93A-3B021E6F7E2A</key>
+		<dict>
+			<key>xpos</key>
+			<integer>100</integer>
+			<key>ypos</key>
+			<integer>250</integer>
+		</dict>
+		<key>6CAA3993-E688-4194-8F78-6AB54644C043</key>
+		<dict>
+			<key>xpos</key>
+			<integer>390</integer>
+			<key>ypos</key>
+			<integer>210</integer>
+		</dict>
+		<key>7A2CBD65-5832-4501-AA59-ACCE72907A19</key>
+		<dict>
+			<key>xpos</key>
+			<integer>600</integer>
+			<key>ypos</key>
+			<integer>320</integer>
+		</dict>
+		<key>9B045256-76B5-4714-A40A-9777C4FEFD62</key>
+		<dict>
+			<key>xpos</key>
+			<integer>650</integer>
+			<key>ypos</key>
+			<integer>510</integer>
+		</dict>
+		<key>F7457EAD-8195-4291-9B76-775F7409F84D</key>
+		<dict>
+			<key>xpos</key>
+			<integer>390</integer>
+			<key>ypos</key>
+			<integer>350</integer>
+		</dict>
+		<key>FBADB986-0B46-46A3-955E-E7C602D2C3E6</key>
+		<dict>
+			<key>xpos</key>
+			<integer>600</integer>
+			<key>ypos</key>
+			<integer>180</integer>
+		</dict>
+	</dict>
+	<key>version</key>
+	<string>1.0</string>
+	<key>webaddress</key>
+	<string>https://github.com/ChainBoy/youdao-translate-for-alfred</string>
+</dict>
+</plist>
